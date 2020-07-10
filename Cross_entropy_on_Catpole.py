@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch import nn, optim
 from tensorboardX import SummaryWriter
+import tensorboard
 
 hidden_size = 128   # size of hidden input layer
 batch_size = 16   # number of episodes played in one iteration
