@@ -1,3 +1,4 @@
+import random
 import gym
 from collections import namedtuple
 import numpy as np
@@ -9,7 +10,7 @@ from torch import nn, optim
 
 hidden_size = 128   # size of hidden input layer
 batch_size = 100  # number of episodes played in one iteration
-percentile = 70   # we shall take only top 30 percentile episodes for training
+percentile = 30   # we shall take only top 30 percentile episodes for training
 gamma = 0.9 #discount factor
 
 class DiscreteOneHotWrapper(gym.ObservationWrapper):
@@ -89,6 +90,7 @@ def filter_batch(batch, percentile):
     return elite_batch, train_obs, train_act, reward_bound
 
 if __name__ == "__main__":
+    random.seed(101)
     env = DiscreteOneHotWrapper(gym.make("FrozenLake-v0"))
     #env = gym.wrappers.Monitor(env, directory="mon", force=True)
     obs_size = env.observation_space.shape[0]
