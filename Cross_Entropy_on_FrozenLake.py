@@ -3,8 +3,8 @@ from collections import namedtuple
 import numpy as np
 import torch
 from torch import nn, optim
-import tensorboard
-from tensorboardX import SummaryWriter
+#import tensorboard
+#from tensorboardX import SummaryWriter
 
 
 hidden_size = 128   # size of hidden input layer
@@ -71,7 +71,7 @@ def iterate_batches(env, net, batch_size):
 def filter_batch(batch, percentile):
     #assign rewards accourding to the number of steps taken to complete
     disc_rewards = list(map(lambda s: s.reward*(gamma**len(s.steps)), batch))
-    reward_bound = np.percentile(rewards, percentile)
+    reward_bound = np.percentile(disc_rewards, percentile)
     #reward_mean = float(np.mean(rewards))
 
     train_obs = []
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     network = Net(obs_size, hidden_size, n_actions)
     loss_func = nn.CrossEntropyLoss()
     optimizer = optim.Adam(params=network.parameters(), lr=0.001) #smaller learning rate------
-    writer = SummaryWriter(comment="-cartpole")
+    #writer = SummaryWriter(comment="-cartpole")
 
     full_batch = []
     for iter_num, batch in enumerate(iterate_batches(env, network, batch_size)):
@@ -115,14 +115,14 @@ if __name__ == "__main__":
         loss_v.backward()
         optimizer.step()
 
-        print("%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f" % (iter_num, loss_v.item(), reward_m, reward_b))
+        print("%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f" % (iter_num, loss_v.item(), reward_mean, reward_b))
         #for plotting on tensorboardX
         '''
         writer.add_scalar("loss", loss_v.item(), iter_num)
         writer.add_scalar("reward_bound", reward_b, iter_num)
         writer.add_scalar("reward_mean", reward_m, iter_num)
         '''
-        if reward_m > 199:
+        if reward_mean > 0.8:
             print("solved!")
             break
     #writer.close()
