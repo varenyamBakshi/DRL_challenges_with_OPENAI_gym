@@ -98,8 +98,8 @@ if __name__ == "__main__":
 
     network = Net(obs_size, hidden_size, n_actions)
     loss_func = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(params=network.parameters(), lr=0.001) #smaller learning rate------
-    writer = SummaryWriter('frozenLake/exp1')
+    optimizer = optim.Adam(params=network.parameters(), lr=0.005) #smaller learning rate------
+    writer = SummaryWriter('frozenLake/exp2', comment="lr=0.005")
 
     full_batch = []
     for iter_num, batch in enumerate(iterate_batches(env, network, batch_size)):
