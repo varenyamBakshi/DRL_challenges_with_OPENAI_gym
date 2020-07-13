@@ -98,8 +98,9 @@ if __name__ == "__main__":
 
     network = Net(obs_size, hidden_size, n_actions)
     loss_func = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(params=network.parameters(), lr=0.005) #smaller learning rate------
-    writer = SummaryWriter('frozenLake/exp2', comment="lr=0.005")
+    optimizer = optim.Adam(params=network.parameters(), lr=0.005) 
+    lr_optimizer = optim.lr_scheduler.StepLR(optimizer, step_size=1000, gamma=0.80)
+    writer = SummaryWriter('frozenLake/exp4', comment="lr decay")
 
     full_batch = []
     for iter_num, batch in enumerate(iterate_batches(env, network, batch_size)):
@@ -111,17 +112,17 @@ if __name__ == "__main__":
         acts_v = torch.tensor(acts, dtype = torch.int64)
         full_batch = full_batch[-500:]#keeping only last 500 elite episodes
         #training the neural network
-        optimizer.zero_grad()
+        optim.zero_grad()
         action_scores_v = network(obs_v)
         loss_v = loss_func(action_scores_v, acts_v)
         loss_v.backward()
-        optimizer.step()
+        lr_optimizer.step()
 
         print("%d: loss=%.3f, percent_success=%.1f, reward_bound=%.1f, mean_rewards=%.3f" % (iter_num, loss_v.item(), percent_success, reward_b, mean_reward))
         #for plotting on tensorboardX
         writer.add_scalar("loss", loss_v.item(), iter_num)
-        writer.add_scalar("reward_bound", reward_b, iter_num)
         writer.add_scalar("success rate", percent_success, iter_num)
+        writer.add_scalar("reward_bound", reward_b, iter_num)
         writer.add_scalar("mean reward", mean_reward,iter_num)
         if percent_success > 0.8:
             print("solved!")
