@@ -27,7 +27,7 @@ class Agent:
     def select_action(self,state):  #choose the best action to take for given state
         best_action, best_value = None, None
         for action in range(self.env.action_space.n):
-            action_value = self.calc_action_value(state, action)
+            action_value = self.values[(state, action)]
             if best_value is None or best_value < action_value:
                 best_value = action_value
                 best_action = action
@@ -53,17 +53,15 @@ class Agent:
                 target_counts = self.transits[(state,action)]
                 total = sum(target_counts.values())
                 for tgt_state, count in target_counts.items():
-                    reward += self.rewards[(state,action,tgt_state)]
+                    reward = self.rewards[(state,action,tgt_state)]
                     best_action = self.select_action(tgt_state)
                     action_value += (count/total)*(reward + gamma*self.values[(tgt_state,best_action)])
                     self.values[(state,action)] = action_value
-            state_values = [self.calc_action_value(state,action) for action in range(self.env.action_space.n)]
-            self.values[state] = max(state_values)
-
+            
 if __name__ == "__main__":
     test_env = gym.make(ENV_name)
     agent = Agent()
-    writer = SummaryWriter('value_iteration_fl/exp1')
+    writer = SummaryWriter('Q_learning_fl/exp1')
 
     iter_no = 0
     best_reward = 0.0
