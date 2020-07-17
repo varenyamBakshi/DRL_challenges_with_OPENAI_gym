@@ -1,5 +1,6 @@
 import gym
 import collections
+import tensorboard
 from tensorboardX import SummaryWriter
 
 ENV_name = "FrozenLake-v0"
@@ -35,7 +36,7 @@ class Agent:
     def select_action(self,state):  #choose the best action to take for given state
         best_action, best_value = None, None
         for action in range(self.env.action_space.n):
-            action_value = self.calc_action_value((state, action))
+            action_value = self.calc_action_value(state, action)
             if best_value is None or best_value < action_value:
                 best_value = action_value
                 best_action = action
@@ -62,7 +63,7 @@ class Agent:
 if __name__ == "__main__":
     test_env = gym.make(ENV_name)
     agent = Agent()
-    writer = SummaryWriter("value_iteration_fl-v0")
+    writer = SummaryWriter('value_iteration_fl/exp1')
 
     iter_no = 0
     best_reward = 0.0
