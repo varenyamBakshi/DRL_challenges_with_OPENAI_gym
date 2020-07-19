@@ -61,7 +61,7 @@ class Agent:
 if __name__ == "__main__":
     test_env = gym.make(ENV_name)
     agent = Agent()
-    writer = SummaryWriter('Q_learning_fl/exp1')
+    writer = SummaryWriter('Q_iteration_fl/exp1')
 
     iter_no = 0
     best_reward = 0.0
