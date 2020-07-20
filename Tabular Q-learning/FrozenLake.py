@@ -23,7 +23,7 @@ class Agent:
     def best_value_and_action(self,state):
         best_value, best_action = None, None
         for action in range(self.env.action_space.n):
-            action_value = self.values.get[(state, action)]
+            action_value = self.values[(state, action)]
             if best_value is None or best_value < action_value:
                 best_value = action_value
                 best_action = action
@@ -35,7 +35,7 @@ class Agent:
         old_val = self.values[(s,a)]
         self.values[(s,a)] = old_val*(1-alpha) + new_val*alpha
 
-    def play_episode(slef,env):
+    def play_episode(self,env):
         total_reward = 0.0
         state = env.reset()
         while True:
@@ -46,4 +46,27 @@ class Agent:
             state = new_state
         return total_reward
 
-    
+if __name__ == "__main__":
+    test_env = gym.make(ENV_NAME)
+    agent = Agent()
+    writer = SummaryWriter("Plots/exp1")
+    iter_no=0
+    best_reward = 0.0
+    while True:
+        iter_no +=1
+        s, a, r, next_s = agent.sample_env()
+        agent.value_update(s,a,r,next_s)
+
+        reward = 0.0
+        for i in range(test_episodes):
+            reward += agent.play_episode(test_env)
+        reward /= test_episodes
+
+        writer.add_scalar("reward", reward, iter_no)
+        if reward>best_reward:
+            print("Best reward updated %.3f -> %.3f"%(best_reward,reward))
+            best_reward = reward
+        if reward > 0.8:
+            print("Solved in {} iterations".format(iter_no))
+            break
+    writer.close()
