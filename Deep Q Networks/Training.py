@@ -79,29 +79,29 @@ class Agent:
             self._reset()
         return done_reward
 
-    def calc_loss(self, batch, net, tgt_net, device="cpu"):
-        states, actions, rewards, is_dones, next_states = batch
+def calc_loss(self, batch, net, tgt_net, device="cpu"):
+    states, actions, rewards, is_dones, next_states = batch
 
-        states_v = torch.Tensor(states).to(device)
-        next_states_v = torch.Tensor(next_states).to(device)
-        actions_v = torch.Tensor(actions).to(device)
-        rewards_v = torch.Tensor(rewards).to(device)
-        done_mask = torch.ByteTensor(is_dones).to(device)
-        
-        state_action_values = net(states_v).gather(1,
-        actions_v.unsqueeze(-1)).squeeze(-1)
-        next_state_values = tgt_net(next_states_v).max(1)[0] # .max() returns both max and argmax
-        next_state_values[done_mask] = 0.0 # if it is the last step of episode so 
-                                           # discounted reward from next state is zero
-                                           # without this the training would not converge
-        next_state_values = next_state_values.detach()
-        # we detach the the value from computation graph to prevent gradients from 
-        # flowing into neural network to calculate Q approximations for next states
-        # it returns the tensor without the connection to its calculation history
+    states_v = torch.Tensor(states).to(device)
+    next_states_v = torch.Tensor(next_states).to(device)
+    actions_v = torch.Tensor(actions).to(device)
+    rewards_v = torch.Tensor(rewards).to(device)
+    done_mask = torch.ByteTensor(is_dones).to(device)
+       
+    state_action_values = net(states_v).gather(1,
+    actions_v.unsqueeze(-1)).squeeze(-1)
+    next_state_values = tgt_net(next_states_v).max(1)[0] # .max() returns both max and argmax
+    next_state_values[done_mask] = 0.0 # if it is the last step of episode so 
+                                       # discounted reward from next state is zero
+                                       # without this the training would not converge
+    next_state_values = next_state_values.detach()
+    # we detach the the value from computation graph to prevent gradients from 
+    # flowing into neural network to calculate Q approximations for next states
+    # it returns the tensor without the connection to its calculation history
 
-        expected_state_action_values = next_state_values*GAMMA +rewards_v
-        return nn.MSELoss()(state_action_values,expected_state_action_values)
-        
+    expected_state_action_values = next_state_values*GAMMA +rewards_v
+    return nn.MSELoss()(state_action_values,expected_state_action_values)
+            
         
 
 if __name__ == "__main__":
@@ -161,9 +161,10 @@ if __name__ == "__main__":
 
         optimizer.zero_grad()
         batch = buffer.sample(BATCH_SIZE)
-        loss_t = agent.calc_loss(batch, net, tgt_net, device=device)
-        loss_t.backward()a
+        loss_t = calc_loss(batch, net, tgt_net, device=device)
+        loss_t.backward()
         optimizer.step()
+    writer.close()
 
 
 

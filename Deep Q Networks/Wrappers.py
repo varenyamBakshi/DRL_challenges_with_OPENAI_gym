@@ -49,8 +49,8 @@ class MaxAndSkipEnv(gym.Wrapper):
 
 class ProcessFrame84(gym.ObservationWrapper):
     """This wrapper converts input observations from the emulator,
-    which normally has a resolution of 210 × 160 pixels with RGB color
-    channels, to a grayscale 84 × 84 image."""
+    which normally has a resolution of 210 x 160 pixels with RGB color
+    channels, to a grayscale 84 x 84 image."""
     def __init__(self, env=None):
         super(ProcessFrame84, self).__init__(env)
         self.observation_space = gym.spaces.Box(low=0,
