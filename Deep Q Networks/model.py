@@ -6,8 +6,7 @@ import numpy as np
 class DQN(nn.Module):
     def __init__(self, input_shape,n_actions):
         super(DQN,self).__init__()
-        self.input_shape = input_shape[0]
-        self.conv1 = nn.Conv2d(self.input_shape,32,kernel_size=8, stride=4),
+        self.conv1 = nn.Conv2d(input_shape[0],32,kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32,64,kernel_size=4,stride=2)
         conv_out_shape = self._get_conv_out(input_shape)
         self.fc1 = nn.Linear(conv_out_shape,512)
