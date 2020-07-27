@@ -14,7 +14,7 @@ class FireResetEnv(gym.Wrapper): # this presses the fire button to start the gam
         assert len(env.unwrapped.get_action_meanings()) >= 3
 
     def step(self,action):
-        return self.env.step.action()
+        return self.env.step(action)
     
     def reset(self):
         self.env.reset()
