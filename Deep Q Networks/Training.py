@@ -79,7 +79,7 @@ class Agent:
             self._reset()
         return done_reward
 
-def calc_loss(self, batch, net, tgt_net, device="cpu"):
+def calc_loss(batch, net, tgt_net, device="cpu"):
     states, actions, rewards, is_dones, next_states = batch
 
     states_v = torch.Tensor(states).to(device)
@@ -161,8 +161,8 @@ if __name__ == "__main__":
                 torch.save(net.state_dict(), "agent/history/After-"+str(len(total_rewards))+"-games.dat")
         if len(buffer) < REPLAY_START_SIZE: continue 
         if frame_idx % SYNC_TARGET_FRAMES == 0:
-            tgt_net.load_state_dict(net.state_dict()) # syncing the target dnetwork with current training network
-
+            tgt_net.load_state_dict(net.state_dict(),strict=False) # syncing the target network with current training network
+            print(tgt_net)
         optimizer.zero_grad()
         batch = buffer.sample(BATCH_SIZE)
         loss_t = calc_loss(batch, net, tgt_net, device=device)
