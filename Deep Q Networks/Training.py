@@ -119,6 +119,7 @@ if __name__ == "__main__":
     tgt_net = model.DQN(env.observation_space.shape, env.action_space.n).to(device)
 
     writer = SummaryWriter("plots-"+args.env)
+    outFile = open("Output_Records.txt","w") # to store the terminal output records to file
     print(net)
     buffer = ExperienceBuffer(REPLAY_SIZE)
     agent = Agent(env,buffer)
@@ -141,20 +142,23 @@ if __name__ == "__main__":
             ts_frame = frame_idx
             ts = time.time()
             mean_reward = np.mean(total_rewards[-100:])
-            print("%d: done %d games, mean reward %.3f, eps %.2f, speed %.2f f/s"%
-            (frame_idx,len(total_rewards),mean_reward, epsilon,speed))
+            out_text = "%d: done %d games, mean reward %.3f, eps %.2f, speed %.2f f/s"%(frame_idx,len(total_rewards),mean_reward, epsilon,speed)
+            print(out_text)
+            outFile.write(out_text+"\n")
             writer.add_scalar("epsilon", epsilon, frame_idx)
             writer.add_scalar("speed", speed, frame_idx)
             writer.add_scalar("reward_100", mean_reward, frame_idx)
             writer.add_scalar("reward", reward, frame_idx)
             if best_mean_reward is None or best_mean_reward < mean_reward:
-                torch.save(net.state_dict(), args.env+"-best.dat")
+                torch.save(net.state_dict(), "agent/"+args.env+"-best.dat")
                 if best_mean_reward is not None:
                     print("Best mean reward updated %.3f -> %.3f, model saved"%(best_mean_reward,mean_reward)) 
                 best_mean_reward = mean_reward
             if mean_reward > args.reward:
                 print("solved in %d frames!"%frame_idx)
                 break
+            if len(total_rewards)==1 or len(total_rewards)%50==0:
+                torch.save(net.state_dict(), "agent/history/After-"+str(len(total_rewards))+"-games.dat")
         if len(buffer) < REPLAY_START_SIZE: continue 
         if frame_idx % SYNC_TARGET_FRAMES == 0:
             tgt_net.load_state_dict(net.state_dict()) # syncing the target dnetwork with current training network
@@ -165,6 +169,7 @@ if __name__ == "__main__":
         loss_t.backward()
         optimizer.step()
     writer.close()
+    outFile.close()
 
 
 
