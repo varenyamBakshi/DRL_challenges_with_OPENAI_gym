@@ -1,5 +1,5 @@
 import Wrappers
-import model
+from model import DQN
 import argparse
 import time
 import numpy as np
@@ -15,7 +15,7 @@ MEAN_REWARD_BOUND = 19.5
 GAMMA = 0.99
 BATCH_SIZE = 32     #batch size sampled from replay buffer for one iteration
 REPLAY_SIZE = 10000     # max capacity of buffer
-REPLAY_START_SIZE = 10000 # count of frames to wait for before training
+REPLAY_START_SIZE = 1000 # count of frames to wait for before training
                           # to populate the replay buffer  
 LEARNING_RATE = 1e-4
 SYNC_TARGET_FRAMES = 1000 # how frequently we sync model weights from training
@@ -43,7 +43,7 @@ class ExperienceBuffer:
     def sample(self, batch_size):
         indices = np.random.choice(len(self.buffer), batch_size,replace=False)
         states, actions, rewards, is_dones, next_states = zip(*[self.buffer[idx] for idx in indices])
-        return np.array(states), np.array(actions), np.array(rewards,dtype=np.float32), np.array(is_dones), np.array(next_states) 
+        return np.array(states), np.array(actions, dtype=np.int64), np.array(rewards,dtype=np.float32), np.array(is_dones, dtype=np.uint8), np.array(next_states) 
 
         
 class Agent:
@@ -84,16 +84,17 @@ def calc_loss(batch, net, tgt_net, device="cpu"):
 
     states_v = torch.Tensor(states).to(device)
     next_states_v = torch.Tensor(next_states).to(device)
-    actions_v = torch.Tensor(actions).to(device)
+    actions_v = torch.Tensor(actions).to(device=device, dtype=torch.int64)
     rewards_v = torch.Tensor(rewards).to(device)
-    done_mask = torch.ByteTensor(is_dones).to(device)
-       
-    state_action_values = net(states_v).gather(1,
-    actions_v.unsqueeze(-1)).squeeze(-1)
+    done_mask = torch.Tensor(is_dones).to(device, dtype=torch.bool) 
+    state_action_values = net(states_v).gather(1,actions_v.unsqueeze(-1)).squeeze(-1)
+    
+   
     next_state_values = tgt_net(next_states_v).max(1)[0] # .max() returns both max and argmax
     next_state_values[done_mask] = 0.0 # if it is the last step of episode so 
                                        # discounted reward from next state is zero
                                        # without this the training would not converge
+    
     next_state_values = next_state_values.detach()
     # we detach the the value from computation graph to prevent gradients from 
     # flowing into neural network to calculate Q approximations for next states
@@ -115,8 +116,8 @@ if __name__ == "__main__":
     device = torch.device("cuda" if args.cuda else "cpu")
 
     env = Wrappers.make_env(args.env)
-    net = model.DQN(env.observation_space.shape, env.action_space.n).to(device)
-    tgt_net = model.DQN(env.observation_space.shape, env.action_space.n).to(device)
+    net = DQN(env.observation_space.shape, env.action_space.n).to(device)
+    tgt_net = DQN(env.observation_space.shape, env.action_space.n).to(device)
 
     writer = SummaryWriter("plots-"+args.env)
     outFile = open("Output_Records.txt","w") # to store the terminal output records to file
@@ -161,8 +162,7 @@ if __name__ == "__main__":
                 torch.save(net.state_dict(), "agent/history/After-"+str(len(total_rewards))+"-games.dat")
         if len(buffer) < REPLAY_START_SIZE: continue 
         if frame_idx % SYNC_TARGET_FRAMES == 0:
-            tgt_net.load_state_dict(net.state_dict(),strict=False) # syncing the target network with current training network
-            print(tgt_net)
+            tgt_net.load_state_dict(net.state_dict()) # syncing the target network with current training network
         optimizer.zero_grad()
         batch = buffer.sample(BATCH_SIZE)
         loss_t = calc_loss(batch, net, tgt_net, device=device)
