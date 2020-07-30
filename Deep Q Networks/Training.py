@@ -4,6 +4,7 @@ import argparse
 import time
 import numpy as np
 import collections
+import re
 
 import torch
 from torch import nn, optim
@@ -15,7 +16,7 @@ MEAN_REWARD_BOUND = 19.5
 GAMMA = 0.99
 BATCH_SIZE = 32     #batch size sampled from replay buffer for one iteration
 REPLAY_SIZE = 10000     # max capacity of buffer
-REPLAY_START_SIZE = 1000 # count of frames to wait for before training
+REPLAY_START_SIZE = 10000 # count of frames to wait for before training
                           # to populate the replay buffer  
 LEARNING_RATE = 1e-4
 SYNC_TARGET_FRAMES = 1000 # how frequently we sync model weights from training
@@ -107,6 +108,7 @@ def calc_loss(batch, net, tgt_net, device="cpu"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--params", default=None, help="file name to extract parameters from")
     parser.add_argument("--cuda",default=False, action="store_true", help="Enable cuda")
     parser.add_argument("--env", default=DEFAULT_ENV_NAME, help="Name of the Environment, default = "
     + DEFAULT_ENV_NAME)
@@ -118,9 +120,17 @@ if __name__ == "__main__":
     env = Wrappers.make_env(args.env)
     net = DQN(env.observation_space.shape, env.action_space.n).to(device)
     tgt_net = DQN(env.observation_space.shape, env.action_space.n).to(device)
+    write_mode = "w" # by default open the file in write mode
+    initial_games = 0
+    if args.params:
+        print("loading parameters from file-"+str(arg.params))
+        net.load_state_dict(torch.load(arg.params, map_location=torch.device(device)))
+        net.load_state_dict(net.state_dict())
+        write_mode = "a"
+        initial_games = int(arg.params.split('-')[1]) 
 
     writer = SummaryWriter("plots-"+args.env)
-    outFile = open("Output_Records.txt","w") # to store the terminal output records to file
+    outFile = open("Output_Records.txt", write_mode) # to store the terminal output records to file
     print(net)
     buffer = ExperienceBuffer(REPLAY_SIZE)
     agent = Agent(env,buffer)
@@ -139,11 +149,12 @@ if __name__ == "__main__":
         reward = agent.play_step(net, epsilon, device=device)
         if reward is not None: # it returns a non-None value only when the episode ends
             total_rewards.append(reward)
+            games_played = initial_games + len(total_rewards)
             speed = (frame_idx-ts_frame)/(time.time()-ts)
             ts_frame = frame_idx
             ts = time.time()
             mean_reward = np.mean(total_rewards[-100:])
-            out_text = "%d: done %d games, mean reward %.3f, eps %.2f, speed %.2f f/s"%(frame_idx,len(total_rewards),mean_reward, epsilon,speed)
+            out_text = "%d: done %d games, mean reward %.3f, eps %.2f, speed %.2f f/s"%(frame_idx,games_played,mean_reward, epsilon,speed)
             print(out_text)
             outFile.write(out_text+"\n")
             writer.add_scalar("epsilon", epsilon, frame_idx)
@@ -158,8 +169,8 @@ if __name__ == "__main__":
             if mean_reward > args.reward:
                 print("solved in %d frames!"%frame_idx)
                 break
-            if len(total_rewards)==1 or len(total_rewards)%50==0:
-                torch.save(net.state_dict(), "agent/history/After-"+str(len(total_rewards))+"-games.dat")
+            if games_played==1 or games_played%50==0:
+                torch.save(net.state_dict(), "agent/history/After-"+str(games_played)+"-games.dat")
         if len(buffer) < REPLAY_START_SIZE: continue 
         if frame_idx % SYNC_TARGET_FRAMES == 0:
             tgt_net.load_state_dict(net.state_dict()) # syncing the target network with current training network
