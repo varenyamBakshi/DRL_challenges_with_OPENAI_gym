@@ -123,11 +123,11 @@ if __name__ == "__main__":
     write_mode = "w" # by default open the file in write mode
     initial_games = 0
     if args.params:
-        print("loading parameters from file-"+str(arg.params))
-        net.load_state_dict(torch.load(arg.params, map_location=torch.device(device)))
+        print("loading parameters from file-"+str(args.params))
+        net.load_state_dict(torch.load(args.params, map_location=torch.device(device)))
         net.load_state_dict(net.state_dict())
         write_mode = "a"
-        initial_games = int(arg.params.split('-')[1]) 
+        initial_games = int(args.params.split('-')[1]) 
 
     writer = SummaryWriter("plots-"+args.env)
     outFile = open("Output_Records.txt", write_mode) # to store the terminal output records to file
@@ -145,7 +145,9 @@ if __name__ == "__main__":
 
     while True: 
         frame_idx += 1
-        epsilon = max(EPSILON_FINAL, EPSILON_START-frame_idx/EPSILON_DECAY_LAST_FRAME)
+        if initial_games==0:
+            epsilon = max(EPSILON_FINAL, EPSILON_START-frame_idx/EPSILON_DECAY_LAST_FRAME)
+        else: epsilon = EPSILON_FINAL
         reward = agent.play_step(net, epsilon, device=device)
         if reward is not None: # it returns a non-None value only when the episode ends
             total_rewards.append(reward)
