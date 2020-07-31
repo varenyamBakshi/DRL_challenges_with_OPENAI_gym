@@ -129,8 +129,8 @@ if __name__ == "__main__":
         write_mode = "a"
         initial_games = int(args.params.split('-')[1]) 
 
-    writer = SummaryWriter("plots-"+args.env)
-    outFile = open("Output_Records.txt", write_mode) # to store the terminal output records to file
+    writer = SummaryWriter("plots-"+args.env+"/run2")
+    outFile = open("Output_Records2.txt", write_mode) # to store the terminal output records to file
     print(net)
     buffer = ExperienceBuffer(REPLAY_SIZE)
     agent = Agent(env,buffer)
@@ -164,7 +164,7 @@ if __name__ == "__main__":
             writer.add_scalar("reward_100", mean_reward, frame_idx)
             writer.add_scalar("reward", reward, frame_idx)
             if best_mean_reward is None or best_mean_reward < mean_reward:
-                torch.save(net.state_dict(), "agent/"+args.env+"-best.dat")
+                torch.save(net.state_dict(), "agent/run2"+args.env+"-best.dat")
                 if best_mean_reward is not None:
                     print("Best mean reward updated %.3f -> %.3f, model saved"%(best_mean_reward,mean_reward)) 
                 best_mean_reward = mean_reward
@@ -172,7 +172,7 @@ if __name__ == "__main__":
                 print("solved in %d frames!"%frame_idx)
                 break
             if games_played==1 or games_played%50==0:
-                torch.save(net.state_dict(), "agent/history/After-"+str(games_played)+"-games.dat")
+                torch.save(net.state_dict(), "agent/run2/history/After-"+str(games_played)+"-games.dat")
         if len(buffer) < REPLAY_START_SIZE: continue 
         if frame_idx % SYNC_TARGET_FRAMES == 0:
             tgt_net.load_state_dict(net.state_dict()) # syncing the target network with current training network
