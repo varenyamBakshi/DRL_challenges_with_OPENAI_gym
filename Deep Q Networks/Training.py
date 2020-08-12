@@ -126,7 +126,7 @@ if __name__ == "__main__":
     if args.params:
         print("loading parameters from file-"+str(args.params))
         net.load_state_dict(torch.load(args.params, map_location=torch.device(device)))
-        net.load_state_dict(net.state_dict())
+        tgt_net.load_state_dict(net.state_dict())
         write_mode = "a"
         initial_games = int(args.params.split('-')[1]) 
 
